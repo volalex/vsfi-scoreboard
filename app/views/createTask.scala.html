@@ -1,0 +1,30 @@
+@(taskForm: Form[Task])
+
+@import helper.twitterBootstrap._
+@import helper._
+
+    @implicitFieldConstructor = @{
+        twitterBootstrap.twitterBootstrapFieldConstructor
+    }
+
+@main("Создание задания") {
+    <h1>Создание задания</h1>
+    @form(routes.Application.saveTask()) {
+        <fieldset>
+            @inputText(taskForm("name"), '_label -> "Название задания")
+            <div class="wmd-panel">
+                <div id="wmd-button-bar"></div>
+                @textarea(taskForm("taskText"), '_label -> "Текст задания", 'class -> "wmd-input", 'id -> "wmd-input")
+            </div>
+            <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
+            <br/>
+            <br/>
+        </fieldset>
+
+        <div class="actions">
+            <input type="submit" value="Создать задание" class="btn btn-primary"> или
+            <a href="@routes.Application.adminList()" class="btn">Отменить</a>
+        </div>
+    }
+}
+

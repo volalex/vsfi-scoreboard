@@ -1,0 +1,33 @@
+@(id: Long, teamForm: Form[Team])
+
+@import helper.twitterBootstrap._
+@import helper._
+
+    @implicitFieldConstructor = @{
+        twitterBootstrap.twitterBootstrapFieldConstructor
+    }
+
+@main("Редактирование команды %s".format(teamForm.get.name)) {
+    <h1>Редактирование команды @teamForm.get.name </h1>
+
+    @form(routes.Application.updateTeam(id)) {
+
+        <fieldset>
+
+            @inputText(teamForm("name"), '_label -> "Название команды")
+            @inputText(teamForm("dnsIp"), '_label -> "IP адрес DNS сервера команды")
+
+        </fieldset>
+
+        <div class="actions">
+            <input type="submit" value="Обновить данные команды" class="btn btn-primary"> или
+            <a href="@routes.Application.adminList()" class="btn">Отменить</a>
+        </div>
+
+    }
+
+    @form(routes.Application.deleteTeam(id), 'class -> "topRight") {
+        <input type="submit" value="Удалить данную команду" class="btn btn-danger">
+    }
+
+}

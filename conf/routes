@@ -1,0 +1,31 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+#main routes
+
+#main ajax routes
+
+#admin section
+#basic
+GET     /                           controllers.Application.index
+GET     /godsPlace/solve/           controllers.Application.solveTask
+GET     /godsPlace                  controllers.Application.adminList
+#Team CRUD
+GET     /godsPlace/team/new         controllers.Application.createTeam
+POST    /godsPlace/team/            controllers.Application.saveTeam
+GET     /godsPlace/team/:id         controllers.Application.editTeam(id:Long)
+POST    /godsPlace/team/:id         controllers.Application.updateTeam(id:Long)
+GET     /godsPlace/team/:id/delete  controllers.Application.deleteTeam(id:Long)
+
+#Task CRUD
+GET     /godsPlace/task/new         controllers.Application.createTask
+POST    /godsPlace/task/            controllers.Application.saveTask
+GET     /godsPlace/task/:id         controllers.Application.editTask(id:Long)
+POST    /godsPlace/task/:id         controllers.Application.updateTask(id:Long)
+GET     /godsPlace/task/:id/delete  controllers.Application.deleteTask(id:Long)
+
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
