@@ -1,7 +1,8 @@
-a.dashed-link{
+a.dashed-link {
     border-bottom: dashed 1px;
 }
-a.dashed-link:hover{
+
+a.dashed-link:hover {
     text-decoration: none;
 }
 
@@ -15,7 +16,6 @@ body {
     height: auto !important;
     height: 100%;
     margin: 0 auto -60px;
-    color: #03fa55
 }
 
 /* Set the fixed height of the footer here */
@@ -24,6 +24,7 @@ body {
     height: 60px;
     margin-top: 20px;
 }
+
 #footer {
     background-color: #f5f5f5;
 }
