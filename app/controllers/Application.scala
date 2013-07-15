@@ -10,7 +10,11 @@ import models.{Team, Task}
 import anorm.{NotAssigned, Pk}
 import views.html
 import scala.Predef._
-import eu.henkelmann.actuarius.ActuariusTransformer
+import play.api.Play.current
+import play.api.Play
+import utils.XSSTransformer
+import play.api.data.validation.{Valid, ValidationError, Invalid, Constraint}
+import scala.sys.process._
 
 
 object Application extends Controller {
@@ -19,7 +23,14 @@ object Application extends Controller {
 
   val AdminHome = Redirect(routes.Application.adminList())
 
-  val transformer = new ActuariusTransformer
+  def addRecord(name:String,ip:String) = Seq(Play.application.configuration
+    .getString("dns.add.script").getOrElse("/home/vsfi/dns_add.py"),name,ip).!
+
+  def delRecord(name:String) = Seq(Play.application.configuration
+    .getString("dns.del.script").getOrElse("/home/vsfi/dns_del.py"),name).!
+
+
+  val transformer = new XSSTransformer
 
   val taskForm = Form(
     mapping(
@@ -29,12 +40,20 @@ object Application extends Controller {
     )(Task.apply)(Task.unapply)
   )
 
+  val loginForm = Form(
+    tuple(
+      "login" -> nonEmptyText,
+      "password" -> nonEmptyText,
+      "redirectUrl" -> play.api.data.Forms.optional(text)
+    )
+  )
+
   val teamForm = Form(
     mapping(
       "id" -> ignored(NotAssigned: Pk[Long]),
       "name" -> nonEmptyText(maxLength = 100),
       "dnsIp" -> text.verifying(pattern(ipPattern.r, name = "Валидный IP адрес",
-        error = "Строка не является валидным IP адресом"))
+        error = "Строка не является валидным IP адресом"),ipUnique)
     )(Team.apply)(Team.unapply)
   )
 
@@ -43,13 +62,40 @@ object Application extends Controller {
       "taskId" -> longNumber(min = 1),
       "teamId" -> longNumber(min = 1),
       "score" -> number(min = 0)
+
     )
   )
 
   def transformTasks(tasks: List[Task]): List[Task] = tasks.map(task => task.copy(taskText = transformer(task.taskText)))
 
-  def index = Action {
-    Ok(html.index(transformTasks(Task.list()), Team.list(),solveForm))
+  def ipUnique: Constraint[String] = Constraint[String]("Уникальный IP адресс") { ip =>
+    if(!Team.isIPUnique(ip)) Invalid(ValidationError("IP адресс не уникален")) else Valid
+  }
+
+  def index = Action { implicit request=>
+    Ok(html.index(transformTasks(Task.list()), Team.list().sortBy(_.fullScore)(Ordering[Option[Long]].reverse), solveForm))
+  }
+
+  def loginPage(redirectUrl:Option[String]) = Action { implicit request =>
+    if(session.get("user").nonEmpty){
+      Redirect(redirectUrl.getOrElse(default = "/godsPlace"),MOVED_PERMANENTLY)
+    }
+    else{
+      Ok(html.login(loginForm.fill(("","",redirectUrl))))
+    }
+
+  }
+
+  def doLogin() = Action { implicit request =>
+    val pass = Play.application.configuration.getString("admin.pass").getOrElse("superDuperPassword")
+    loginForm.bindFromRequest().fold(
+      formWithErrors => BadRequest(html.login(formWithErrors)),
+      values => { values match{
+        case ("admin", `pass`,redirectUrl) => Redirect(redirectUrl.getOrElse(default = "/godsPlace"),MOVED_PERMANENTLY).withSession("user"->"admin")
+        case  v => Redirect(routes.Application.loginPage(v._3)).flashing("error" -> "Неправильный логин или пароль")
+      }
+      }
+    )
   }
 
   def solveTask = Action {
@@ -90,6 +136,9 @@ object Application extends Controller {
         formWithErrors => BadRequest(html.createTeam(formWithErrors)),
         team => {
           Team.insert(team)
+          if(Play.application.configuration.getBoolean("dns.add.script").nonEmpty){
+            addRecord("team"+Team.getLastId,team.dnsIp)
+          }
           AdminHome.flashing("success" -> "Команда %s создана".format(team.name))
         }
       )
@@ -115,6 +164,9 @@ object Application extends Controller {
 
   def deleteTeam(id: Long) = Action {
     Team.delete(id)
+    if(Play.application.configuration.getBoolean("dns.del.script").nonEmpty){
+      delRecord("team"+id)
+    }
     AdminHome.flashing("success" -> "Команда удалена")
   }
 

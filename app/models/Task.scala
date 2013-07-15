@@ -30,8 +30,12 @@ object Task {
     DB.withConnection {
       implicit connection =>
         if (team.solvedTasks.contains(task.id.get)) {
-          SQL("UPDATE task_to_team SET score={score} where team_id={team_id} and task_id={task_id}")
-            .on('score -> score, 'team_id -> team.id.get, 'task_id -> task.id.get).executeUpdate()
+          score match {
+            case 0 => SQL("DELETE from task_to_team WHERE team_id={team_id} and task_id={task_id}")
+              .on('team_id->team.id.get,'task_id->task.id.get).executeUpdate()
+            case _ => SQL("UPDATE task_to_team SET score={score} where team_id={team_id} and task_id={task_id}")
+              .on('score -> score, 'team_id -> team.id.get, 'task_id -> task.id.get).executeUpdate()
+          }
         }
         else {
           SQL(
@@ -82,7 +86,7 @@ object Task {
         ).on(
           'id -> id,
           'name -> task.name,
-          'dns_ip -> task.taskText
+          'task_text -> task.taskText
         ).executeUpdate()
     }
   }

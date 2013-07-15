@@ -21,6 +21,14 @@ case class Team(id:Pk[Long] = NotAssigned,name:String,dnsIp:String) {
       """.stripMargin).on('id -> this.id)
       .as(Team.taskIdWithResult *).toMap
   }
+  lazy val fullScore:Option[Long] = DB.withConnection { implicit connection =>
+    SQL(
+      """
+        |select sum(score) from task_to_team where team_id={id}
+      """.stripMargin
+    ).on('id->this.id)().map(row=>row[Option[Long]]("sum(score)")).head
+
+  }
 }
 
 case class Result(score:Int,solvedAt:Option[Date])
@@ -53,6 +61,14 @@ object Team {
     }
   }
 
+  def isIPUnique(ip:String):Boolean = {
+    DB.withConnection{ implicit  connection =>
+      val test = SQL("SELECT count(*) from team where dns_ip={dns_ip}").on('dns_ip -> ip) ()
+        .map( row=>row[Option[Long]]("count(*)")).head
+      test.getOrElse(0)==0
+    }
+  }
+
   def insert(team:Team) = {
     DB.withConnection{implicit connection =>
       SQL(
@@ -63,6 +79,15 @@ object Team {
         'name -> team.name,
         'dns_ip -> team.dnsIp
       ).executeUpdate()
+    }
+  }
+
+  def getLastId = {
+    DB.withConnection{ implicit connection=>
+      SQL(
+        """
+          |select MAX(id) from team
+        """.stripMargin).as(scalar[Long].single)
     }
   }
 

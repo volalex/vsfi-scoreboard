@@ -9,6 +9,9 @@
 #admin section
 #basic
 GET     /                           controllers.Application.index
+#auth
+GET     /login                      controllers.Application.loginPage(redirectUrl:Option[String])
+POST    /doLogin                    controllers.Application.doLogin
 GET     /godsPlace/solve/           controllers.Application.solveTask
 GET     /godsPlace                  controllers.Application.adminList
 #Team CRUD

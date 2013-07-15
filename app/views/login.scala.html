@@ -1,0 +1,31 @@
+@(loginForm:Form[(String,String,Option[String])])(implicit flash: Flash)
+@import helper.twitterBootstrap._
+@import helper._
+
+    @implicitFieldConstructor = @{
+        twitterBootstrap.twitterBootstrapFieldConstructor
+    }
+
+
+@main("Аутентификация"){
+    <div class="row-fluid">
+        <div class="span12 text-center">
+            @if(flash.get("error").nonEmpty) {
+                <div class="alert-error alert">
+                    <strong>Ошибка</strong> @flash.get("error")
+                </div>
+            }
+            @form(routes.Application.doLogin(),'class -> "form-signin"){
+                <h2>Аутентификация</h2>
+                @inputText(loginForm("login"),'_label -> "Логин")
+                @inputPassword(loginForm("password"),'_label -> "Пароль")
+                @input(loginForm("redirectUrl"),'type -> "hidden",'_label -> null) { (id,name,value,args) =>
+                  <input type="hidden" value="@value" name="@name" id="@id" @toHtmlArgs(args)/>
+                }
+                <div class="actions">
+                    <input type="submit" value="Войти" class="btn btn-primary">
+                </div>
+            }
+        </div>
+    </div>
+}

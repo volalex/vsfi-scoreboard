@@ -1,29 +1,30 @@
-@(tasks:List[Task],teams:List[Team],solveForm:Form[(Long,Long,Int)])
-@import java.util.Date
+@(tasks: List[Task], teams: List[Team], solveForm: Form[(Long, Long, Int)])(implicit session: Session)
 @import helper._
+
 
     @implicitFieldConstructor = @{
         FieldConstructor(twitterBootstrapInputInline.f)
     }
 
-@display(result:models.Result) = {
-   <td>
-       <span class="label label-info">@result.solvedAt.map(_.format("hh:mm dd.MM")).getOrElse {00:00}</span> -
-       <span class="badge @if(result.score>0){badge-success}">@result.score</span>
-   </td>
-}
+    @display(result: models.Result) = {
+        <td>
+            <span class="label label-info">@result.solvedAt.map(_.format("kk:mm dd.MM")).getOrElse {00:00}</span> -
+            <span class="badge @if(result.score > 0) {badge-success}">@result.score</span>
+        </td>
+    }
 
-@main("VSFI"){
-    <div style="" class="row-fluid" id="main-logo">
+@main("VSFI") {
+    <div class="row-fluid" id="main-logo">
         <div class="span12 text-center">
             <img src="@routes.Assets.at("images/logo.png")" class="img-rounded">
             <h1>IT's all very simple</h1>
-        </div>        
+        </div>
     </div>
+    <div class='notifications top-left'></div>
     <div class="row-fluid">
         <div class="span12">
             <ul id="indexTabs" class="nav nav-tabs">
-                <li class="active"><a href="#results"  data-toggle="tab">Результаты</a></li>
+                <li class="active"><a href="#results" data-toggle="tab">Результаты</a></li>
                 <li><a href="#tasks" data-toggle="tab">Задания</a></li>
             </ul>
             <div id="indexTabsContent" class="tab-content">
@@ -31,42 +32,51 @@
                     <table class="table">
                         <thead>
                             <th>&nbsp;</th>
-                            @tasks.map { case task =>
+                            @tasks.map {case task =>
                                 <th>@task.name</th>
+                            }
+                            @if(teams.nonEmpty) {
+                                <th>Всего баллов</th>
                             }
                         </thead>
                         <tbody>
                         @teams.map { case team =>
-                        <tr>
-                            <td>@team.name</td>
-                            @tasks.map {case task=>
-                                @display(team.solvedTasks
-                                        .getOrElse(task.id.get,Result(0,Option[Date](null))))
-                            }
+                            <tr>
+                                <td>@team.name</td>
+                                @tasks.map { case task =>
+                                        @display(team.solvedTasks
+                                                .getOrElse(task.id.get, Result(0, Option[Date](null))))
+                                }
+                                <td><span class="badge @if(team.fullScore.map(_ > 0).getOrElse(false)) {badge-success}">@team.fullScore.getOrElse("0")</span></td>
                         </tr>
                         }
                         </tbody>
                     </table>
                 </div>
                 <div id="tasks" class="tab-pane">
-                    <h2>Tasks</h2>
-                    @tasks.map{ case task =>
+                    <h2>Задания</h2>
+                    @tasks.map {  case task =>
                         <h3>@task.name</h3>
                         <p>
-                            @Html(task.taskText)
+                        @Html(task.taskText)
                         </p>
-                        <p>
-                            <h4>Зачесть задание</h4>
-                            @form(routes.Application.solveTask(),'class -> "form-inline"){
-                                <input type="hidden" name="taskId" value="@task.id"/>
-                                @select(solveForm("teamId"),teams.map(team=>(team.id.get.toString,team.name)),
-                                    '_label -> "Команда", '_default -> "-- Выберите команду --",
-                                    '_showConstraints -> false, '_label->"", 'class->"select-small"
-                                )
-                                @inputText(solveForm("score"),'placeholder -> "Баллы",'class->"input-small",'_showConstraints -> false,'_label->"")
-                                <button type="submit" class="btn btn-success">OK</button>
+                            @if(session.get("user").nonEmpty) {
+                                <p>
+                                    <h4>Зачесть задание</h4>
+                                    @form(routes.Application.solveTask(), 'class -> "form-inline") {
+                                        <input type="hidden" name="taskId" value="@task.id"/>
+                                        @select(solveForm("teamId"), teams.map(team => (team.id.get.toString, team.name)),
+                                            '_label -> "Команда", '_default -> "-- Выберите команду --",
+                                            '_showConstraints -> false, '_label -> "", 'class -> "select-small"
+                                        )
+                                        @inputText(solveForm("score"), 'placeholder -> "Баллы", 'class -> "input-small", '_showConstraints -> false, '_label -> "")
+                                        <button type="submit" class="btn btn-success">OK</button>
+                                    }
+                                    <div class="alert alert-success" style="display: none;">
+                                        <a class="close" data-dismiss="alert">×</a>
+                                    </div>
+                                    </p>
                             }
-                        </p>
                         <hr/>
                     }
                 </div>
