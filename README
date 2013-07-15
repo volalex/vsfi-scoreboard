@@ -1,4 +1,2 @@
-This is your new Play 2.1 application
-=====================================
-
-This file will be packaged with your application, when using `play dist`.
+This is a simple scoreboard used in vsfi competion(Network and system administrators competition), it contains a simple 
+team - task - score model, and also capable to add dns record for new team with external scripts.
